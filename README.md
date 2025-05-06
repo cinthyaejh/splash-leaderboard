@@ -8,8 +8,8 @@ I enjoyed thinking of new interactions on the leaderboard with Daniel and Phrab,
 - Used lovable to get most of the way in replicating current Splash's Kaimix style
 - Used Chatgpt to generate an AI image of Kai and Figma to make a new banner.
 - Used Cursor to update Typescript code to React, and implement two ideas:
-- - Monthly Challenges
-- - Regional leaderboards
+ - Monthly Challenges
+ - Regional leaderboards
  
 **Challenges**
 - Instead of the featured list, which is unclear how one gets chosen or how it's different from Popular, decided to make it Challenges. May challenges is in honor of say silly national/international holidays like "National Donut Day". This was something that used to be very popular ASO marketing strategy for apps and to boost engagement.
