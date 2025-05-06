@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Track } from './types';
 
@@ -55,16 +54,16 @@ const checkAndPopulateData = async (db: IDBDatabase): Promise<void> => {
       if (count === 0) {
         // If no data exists, populate with mock data
         const mockTracks = [
-          { title: 'Tourne le', artists: 'Doom x RZZY', certified: true, plays: 357, category: 'featured' },
-          { title: 'Ready?', artists: 'Tracy x Bob Foxx', certified: true, plays: 174000, category: 'featured' },
-          { title: 'dontPretend ❤ urMine', artists: 'danydanidannie x Bob Foxx', certified: true, plays: 92, category: 'featured' },
-          { title: 'On and On', artists: 'archie x Kai', certified: true, plays: 3900000, category: 'popular' },
-          { title: 'MOON', artists: 'MOON x RZZY', certified: true, plays: 5900000, category: 'popular' },
-          { title: 'We do it 💪', artists: 'Tarika x Bob Foxx', certified: true, plays: 149000, category: 'popular' },
-          { title: 'Desert', artists: 'Tracy x Bob Foxx', certified: true, plays: 45, category: 'new' },
-          { title: 'Electric Dreams', artists: 'NOKTRN x Kai', certified: true, plays: 12500, category: 'new' },
-          { title: 'Neon City', artists: 'Bob Foxx x RZZY', certified: true, plays: 8700, category: 'new' },
-          { title: 'Digital Soul', artists: 'Tracy x danydanidannie', certified: true, plays: 6300, category: 'new' }
+          { title: 'Tourne le', artists: 'Doom x RZZY', certified: true, plays: 357, category: 'Challenge', origin: 'FR' },
+          { title: 'Ready?', artists: 'Tracy x Bob Foxx', certified: true, plays: 174000, category: 'Challenge', origin: 'US' },
+          { title: 'dontPretend ❤ urMine', artists: 'danydanidannie x Bob Foxx', certified: true, plays: 92, category: 'Challenge', origin: 'DE' },
+          { title: 'On and On', artists: 'archie x Kai', certified: true, plays: 3900000, category: 'Popular', origin: 'GB' },
+          { title: 'MOON', artists: 'MOON x RZZY', certified: true, plays: 5900000, category: 'Popular', origin: 'KR' },
+          { title: 'We do it 💪', artists: 'Tarika x Bob Foxx', certified: true, plays: 149000, category: 'Popular', origin: 'IN' },
+          { title: 'Desert', artists: 'Tracy x Bob Foxx', certified: true, plays: 45, category: 'Challenge', origin: 'JP' },
+          { title: 'Electric Dreams', artists: 'NOKTRN x Kai', certified: true, plays: 12500, category: 'Popular', origin: 'US' },
+          { title: 'Neon City', artists: 'Bob Foxx x RZZY', certified: true, plays: 8700, category: 'Challenge', origin: 'US' },
+          { title: 'Digital Soul', artists: 'Tracy x danydanidannie', certified: true, plays: 6300, category: 'Challenge', origin: 'US' }
         ];
         
         addTracks(mockTracks).then(() => {
@@ -147,26 +146,50 @@ export const getTracks = async (category: string = 'featured'): Promise<Track[]>
 };
 
 // Use this hook to fetch tracks data
-export function useTracks(category: string = 'featured') {
+export function useTracks(tab: string) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Initialize and fetch tracks
-    const fetchData = async () => {
-      try {
-        await initDatabase();
-        const fetchedTracks = await getTracks(category);
-        setTracks(fetchedTracks);
-      } catch (error) {
-        console.error('Error fetching tracks:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
+    async function fetchData() {
+      await initDatabase();
+      const fetchedTracks = await getTracks(tabToCategory[tab]);
+      setTracks(fetchedTracks);
+      setLoading(false);
+    }
     fetchData();
-  }, [category]);
+  }, [tab]);
   
   return { tracks, loading };
 }
+
+const tabToCategory = {
+  challenge: 'Challenge',
+  popular: 'Popular'
+};
+
+export const getAllTracksWithOrigin = async (origin: string): Promise<Track[]> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const allTracksRequest = store.getAll();
+      
+      allTracksRequest.onsuccess = () => {
+        const result = allTracksRequest.result.filter(track => track.origin === origin);
+        resolve(result);
+      };
+      
+      allTracksRequest.onerror = (e) => {
+        reject((e.target as IDBRequest).error);
+      };
+    };
+    
+    request.onerror = (event) => {
+      reject((event.target as IDBOpenDBRequest).error);
+    };
+  });
+};

@@ -1,4 +1,3 @@
-
 export interface Track {
   id: number;
   title: string;
@@ -6,6 +5,7 @@ export interface Track {
   certified: boolean;
   plays: number;
   category: string;
+  origin: string; // Country code, e.g., 'US', 'FR'
 }
 
 export function formatNumber(number: number): string {

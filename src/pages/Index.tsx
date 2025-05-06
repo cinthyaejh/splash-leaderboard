@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Logo from '@/components/Logo';
 import Hero from '@/components/Hero';
@@ -8,7 +7,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { useTracks } from '@/lib/db';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('featured');
+  const [activeTab, setActiveTab] = useState('challenge');
   const { tracks, loading } = useTracks(activeTab);
 
   return (

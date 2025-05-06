@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface TabProps {
@@ -8,9 +7,8 @@ interface TabProps {
 
 const TabNavigation: React.FC<TabProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: 'featured', label: 'FEATURED' },
-    { id: 'popular', label: 'POPULAR' },
-    { id: 'new', label: 'NEW' }
+    { id: 'challenge', label: 'CHALLENGE' },
+    { id: 'popular', label: 'POPULAR' }
   ];
 
   return (

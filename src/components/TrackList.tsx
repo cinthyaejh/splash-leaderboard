@@ -2,6 +2,15 @@ import React from 'react';
 import { Play } from 'lucide-react';
 import { Track, formatNumber } from '@/lib/types';
 
+// Helper to convert country code to flag emoji
+function countryCodeToEmoji(code: string) {
+  return code
+    .toUpperCase()
+    .replace(/./g, char =>
+      String.fromCodePoint(127397 + char.charCodeAt(0))
+    );
+}
+
 interface TrackItemProps {
   track: Track;
   onPlay?: (track: Track) => void;
@@ -12,11 +21,12 @@ const TrackItem: React.FC<TrackItemProps> = ({ track, onPlay }) => {
     <div className="flex justify-between items-center px-4 py-5 border-b border-gray-800">
       <div className="flex flex-col">
         <div className="text-white font-semibold text-lg">{track.title}</div>
-        <div className="text-gray-400 text-sm flex items-center">
+        <div className="text-gray-400 text-sm flex items-center gap-2">
           {track.artists}
           {track.certified && (
             <span className="ml-1 text-kaimix-lime text-lg">✦</span>
           )}
+          <span>{countryCodeToEmoji(track.origin)}</span>
         </div>
       </div>
       <div className="flex items-center">
