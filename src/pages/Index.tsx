@@ -1,11 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState, useEffect } from 'react';
+import Logo from '@/components/Logo';
+import Hero from '@/components/Hero';
+import TabNavigation from '@/components/TabNavigation';
+import TrackList from '@/components/TrackList';
+import BottomNavigation from '@/components/BottomNavigation';
+import { useTracks, initDatabase } from '@/lib/db';
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState('featured');
+  const { tracks, loading } = useTracks(activeTab);
+  
+  // Initialize database when component mounts
+  useEffect(() => {
+    initDatabase();
+  }, []);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-black pb-16">
+      <div className="max-w-md mx-auto bg-kaimix-dark">
+        <div className="p-4">
+          <Logo />
+        </div>
+        
+        <Hero />
+        
+        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        <div className="overflow-y-auto max-h-[calc(100vh-500px)]">
+          <TrackList tracks={tracks} loading={loading} />
+        </div>
+        
+        <BottomNavigation />
       </div>
     </div>
   );
