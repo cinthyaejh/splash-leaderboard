@@ -145,27 +145,65 @@ export const getTracks = async (category: string = 'featured'): Promise<Track[]>
   });
 };
 
+// Get all tracks
+export const getAllTracks = async (): Promise<Track[]> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const allTracksRequest = store.getAll();
+      
+      allTracksRequest.onsuccess = () => {
+        const result = allTracksRequest.result.sort((a, b) => b.plays - a.plays);
+        resolve(result);
+      };
+      
+      allTracksRequest.onerror = (e) => {
+        reject((e.target as IDBRequest).error);
+      };
+    };
+    
+    request.onerror = (event) => {
+      reject((event.target as IDBOpenDBRequest).error);
+    };
+  });
+};
+
 // Use this hook to fetch tracks data
-export function useTracks(tab: string) {
+export function useTracks(tab: string, region: string = 'all') {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     async function fetchData() {
       await initDatabase();
-      const fetchedTracks = await getTracks(tabToCategory[tab]);
+      let fetchedTracks: Track[];
+      
+      if (tab === 'region') {
+        fetchedTracks = await getAllTracks();
+        if (region !== 'all') {
+          fetchedTracks = fetchedTracks.filter(track => track.origin === region);
+        }
+      } else {
+        fetchedTracks = await getTracks(tabToCategory[tab]);
+      }
+      
       setTracks(fetchedTracks);
       setLoading(false);
     }
     fetchData();
-  }, [tab]);
+  }, [tab, region]);
   
   return { tracks, loading };
 }
 
 const tabToCategory = {
   challenge: 'Challenge',
-  popular: 'Popular'
+  popular: 'Popular',
+  region: 'all'
 };
 
 export const getAllTracksWithOrigin = async (origin: string): Promise<Track[]> => {

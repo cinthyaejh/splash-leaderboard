@@ -4,11 +4,13 @@ import Hero from '@/components/Hero';
 import TabNavigation from '@/components/TabNavigation';
 import TrackList from '@/components/TrackList';
 import BottomNavigation from '@/components/BottomNavigation';
-import { useTracks } from '@/lib/db';
+import RegionFilter from '@/components/RegionFilter';
+import { useTracks, getAllTracks } from '@/lib/db';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('challenge');
-  const { tracks, loading } = useTracks(activeTab);
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const { tracks, loading } = useTracks(activeTab, selectedRegion);
 
   return (
     <div className="min-h-screen bg-black pb-16">
@@ -20,6 +22,13 @@ const Index = () => {
         <Hero imageUrl="images/donutDayKai.png" artistName="Kai" />
         
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        {activeTab === 'region' && (
+          <RegionFilter 
+            selectedRegion={selectedRegion} 
+            onRegionChange={setSelectedRegion} 
+          />
+        )}
         
         <div className="overflow-y-auto max-h-[calc(100vh-500px)]">
           <TrackList tracks={tracks} loading={loading} />

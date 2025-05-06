@@ -8,7 +8,8 @@ interface TabProps {
 const TabNavigation: React.FC<TabProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'challenge', label: 'CHALLENGE' },
-    { id: 'popular', label: 'POPULAR' }
+    { id: 'popular', label: 'POPULAR' },
+    { id: 'region', label: 'TOP REGION' }
   ];
 
   return (
