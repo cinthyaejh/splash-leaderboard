@@ -1,20 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Logo from '@/components/Logo';
 import Hero from '@/components/Hero';
 import TabNavigation from '@/components/TabNavigation';
 import TrackList from '@/components/TrackList';
 import BottomNavigation from '@/components/BottomNavigation';
-import { useTracks, initDatabase } from '@/lib/db';
+import { useTracks } from '@/lib/db';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('featured');
   const { tracks, loading } = useTracks(activeTab);
-  
-  // Initialize database when component mounts
-  useEffect(() => {
-    initDatabase();
-  }, []);
 
   return (
     <div className="min-h-screen bg-black pb-16">

@@ -1,91 +1,171 @@
 
-import Database from 'better-sqlite3';
 import { useState, useEffect } from 'react';
+import { Track } from './types';
 
-let db: Database.Database | null = null;
+// Define the database name and store
+const DB_NAME = 'kaimixDB';
+const STORE_NAME = 'tracks';
 
 // Initialize database
-export const initDatabase = () => {
-  if (!db) {
-    try {
-      db = new Database(':memory:'); // In-memory database for demo
-      console.log('SQLite database initialized in memory');
+export const initDatabase = async (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    // Handle database upgrade (or creation)
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
       
-      // Create tracks table
-      db.exec(`
-        CREATE TABLE IF NOT EXISTS tracks (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL,
-          artists TEXT NOT NULL,
-          certified BOOLEAN DEFAULT FALSE,
-          plays INTEGER DEFAULT 0,
-          category TEXT DEFAULT 'featured'
-        )
-      `);
+      // Create object store if it doesn't exist
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+        store.createIndex('category', 'category', { unique: false });
+        console.log('Tracks store created');
+      }
+    };
+    
+    // Handle success
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      console.log('IndexedDB initialized successfully');
       
-      // Insert mock data
-      const insert = db.prepare(`
-        INSERT INTO tracks (title, artists, certified, plays, category) 
-        VALUES (@title, @artists, @certified, @plays, @category)
-      `);
+      // Insert mock data only if the store is empty
+      checkAndPopulateData(db).then(() => {
+        resolve();
+      });
+    };
+    
+    // Handle error
+    request.onerror = (event) => {
+      console.error('Failed to initialize IndexedDB:', (event.target as IDBOpenDBRequest).error);
+      reject((event.target as IDBOpenDBRequest).error);
+    };
+  });
+};
+
+// Check if data exists and populate if empty
+const checkAndPopulateData = async (db: IDBDatabase): Promise<void> => {
+  return new Promise((resolve) => {
+    const transaction = db.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const countRequest = store.count();
+    
+    countRequest.onsuccess = () => {
+      const count = countRequest.result;
       
-      const mockTracks = [
-        { title: 'Tourne le', artists: 'Doom x RZZY', certified: true, plays: 357, category: 'featured' },
-        { title: 'Ready?', artists: 'Tracy x Bob Foxx', certified: true, plays: 174000, category: 'featured' },
-        { title: 'dontPretend ❤ urMine', artists: 'danydanidannie x Bob Foxx', certified: true, plays: 92, category: 'featured' },
-        { title: 'On and On', artists: 'archie x Kai', certified: true, plays: 3900000, category: 'popular' },
-        { title: 'MOON', artists: 'MOON x RZZY', certified: true, plays: 5900000, category: 'popular' },
-        { title: 'We do it 💪', artists: 'Tarika x Bob Foxx', certified: true, plays: 149000, category: 'popular' },
-        { title: 'Desert', artists: 'Tracy x Bob Foxx', certified: true, plays: 45, category: 'new' },
-        { title: 'Electric Dreams', artists: 'NOKTRN x Kai', certified: true, plays: 12500, category: 'new' },
-        { title: 'Neon City', artists: 'Bob Foxx x RZZY', certified: true, plays: 8700, category: 'new' },
-        { title: 'Digital Soul', artists: 'Tracy x danydanidannie', certified: true, plays: 6300, category: 'new' }
-      ];
+      if (count === 0) {
+        // If no data exists, populate with mock data
+        const mockTracks = [
+          { title: 'Tourne le', artists: 'Doom x RZZY', certified: true, plays: 357, category: 'featured' },
+          { title: 'Ready?', artists: 'Tracy x Bob Foxx', certified: true, plays: 174000, category: 'featured' },
+          { title: 'dontPretend ❤ urMine', artists: 'danydanidannie x Bob Foxx', certified: true, plays: 92, category: 'featured' },
+          { title: 'On and On', artists: 'archie x Kai', certified: true, plays: 3900000, category: 'popular' },
+          { title: 'MOON', artists: 'MOON x RZZY', certified: true, plays: 5900000, category: 'popular' },
+          { title: 'We do it 💪', artists: 'Tarika x Bob Foxx', certified: true, plays: 149000, category: 'popular' },
+          { title: 'Desert', artists: 'Tracy x Bob Foxx', certified: true, plays: 45, category: 'new' },
+          { title: 'Electric Dreams', artists: 'NOKTRN x Kai', certified: true, plays: 12500, category: 'new' },
+          { title: 'Neon City', artists: 'Bob Foxx x RZZY', certified: true, plays: 8700, category: 'new' },
+          { title: 'Digital Soul', artists: 'Tracy x danydanidannie', certified: true, plays: 6300, category: 'new' }
+        ];
+        
+        addTracks(mockTracks).then(() => {
+          console.log('Mock data inserted');
+          resolve();
+        });
+      } else {
+        console.log('Data already exists, skipping mock data insertion');
+        resolve();
+      }
+    };
+  });
+};
+
+// Add tracks to the database
+const addTracks = async (tracks: Omit<Track, 'id'>[]): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
       
-      const transaction = db.transaction(() => {
-        for (const track of mockTracks) {
-          insert.run(track);
-        }
+      let counter = 0;
+      
+      tracks.forEach(track => {
+        const addRequest = store.add(track);
+        
+        addRequest.onsuccess = () => {
+          counter++;
+          if (counter === tracks.length) {
+            resolve();
+          }
+        };
+        
+        addRequest.onerror = (e) => {
+          reject((e.target as IDBRequest).error);
+        };
       });
       
-      transaction();
-      console.log('Mock data inserted');
-    } catch (error) {
-      console.error('Failed to initialize SQLite database:', error);
-    }
-  }
+      transaction.oncomplete = () => {
+        console.log('All tracks added successfully');
+      };
+    };
+    
+    request.onerror = (event) => {
+      reject((event.target as IDBOpenDBRequest).error);
+    };
+  });
 };
 
 // Get tracks by category
-export const getTracks = (category: string = 'featured') => {
-  if (!db) {
-    initDatabase();
-  }
-  
-  try {
-    const stmt = db?.prepare('SELECT * FROM tracks WHERE category = ? ORDER BY plays DESC');
-    return stmt?.all(category) || [];
-  } catch (error) {
-    console.error(`Failed to get ${category} tracks:`, error);
-    return [];
-  }
+export const getTracks = async (category: string = 'featured'): Promise<Track[]> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const index = store.index('category');
+      const query = index.getAll(category);
+      
+      query.onsuccess = () => {
+        // Sort by plays in descending order
+        const result = query.result.sort((a, b) => b.plays - a.plays);
+        resolve(result);
+      };
+      
+      query.onerror = (e) => {
+        reject((e.target as IDBRequest).error);
+      };
+    };
+    
+    request.onerror = (event) => {
+      reject((event.target as IDBOpenDBRequest).error);
+    };
+  });
 };
 
 // Use this hook to fetch tracks data
 export function useTracks(category: string = 'featured') {
-  const [tracks, setTracks] = useState<any[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Initialize database if needed
-    if (!db) {
-      initDatabase();
-    }
+    // Initialize and fetch tracks
+    const fetchData = async () => {
+      try {
+        await initDatabase();
+        const fetchedTracks = await getTracks(category);
+        setTracks(fetchedTracks);
+      } catch (error) {
+        console.error('Error fetching tracks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Fetch tracks
-    const fetchedTracks = getTracks(category);
-    setTracks(fetchedTracks);
-    setLoading(false);
+    fetchData();
   }, [category]);
   
   return { tracks, loading };
