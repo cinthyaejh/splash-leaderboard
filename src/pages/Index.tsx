@@ -18,7 +18,7 @@ const Index = () => {
           <Logo />
         </div>
         
-        <Hero />
+        <Hero imageUrl="images/donutDayKai.png" artistName="Kai" />
         
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         
